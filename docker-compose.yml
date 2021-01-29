@@ -1,0 +1,31 @@
+version: "2"
+services:
+  axxon-node: 
+    image: axxon:0.0.1
+    container_name: axxon-node
+    restart: always
+    build: .
+    ports: 
+      - "3004:3000"
+    depends_on:
+      - axxon-database
+    environment:
+      - DB_HOST=axxon-database
+      - DB_PORT=27017
+      - DB_NAME=axxon
+      - DB_PROTOCOL=mongodb
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=3000
+      - DOMAIN_PROTOCOL=http
+      - DOMAIN_HOST=127.0.0.1
+      - DOMAIN_PORT=3000
+      - NODE_ENV=development
+      - PLATFORM=axxon
+  axxon-database:
+    container_name: axxon-database
+    image: mongo:4.0
+    restart: always
+    volumes:
+      - ./db-data:/data/db
+    ports:
+      - "27018:27017"
