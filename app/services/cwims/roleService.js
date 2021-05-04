@@ -1,6 +1,8 @@
 'use strict';
 
-const { roleModel } = require('../../models');
+const { roleModel, userModel } = require('../../models');
+const _ = require('lodash');
+const { ROLE_TYPE } = require('../../utils/constants')
 
 let roleService = {};
 
@@ -38,8 +40,20 @@ roleService.fetchRole = async (criteria = false, attributes = false) => {
 /**
  * fetch roles
  */
-roleService.fetchRoles = async (criteria = false, attributes = false) => {
-    return await roleModel.findAll({
+roleService.fetchRoles = async (criteria = false, attributes = false, pagination, sort = {}) => {
+    return await roleModel.findAndCountAll({
+        ...(criteria && { where: criteria }),
+        ...pagination,
+        ...(attributes && { attributes }),
+        ...sort
+    });
+}
+
+/**
+ * fetch roles
+ */
+roleService.fetchUsersByRoles = async (criteria = false, attributes = false) => {
+    return await userModel.findAll({
         ...(criteria && { where: criteria }),
         ...(attributes && { attributes })
     });

@@ -4,32 +4,34 @@ const MODELS = require(`../../models`);
 const utils = require('../../utils/utils');
 const _ = require('lodash');
 const CONSTANTS = require('../../utils/constants');
-const roleService = require('./roleService');
-const { warehouseModel, userModel, roleModel } = require('../../models');
+const moment = require('moment');
+const { warehouseModel, userModel, roleModel, inventoryModel, warehouseLocationModel } = require('../../models');
+const { USER_STATUS } = require('../../utils/constants');
 
 let userService = {};
 
 /**
  * listUser
  */
-userService.listUser = async (criteria = false, attributes = false, pagination) => {
+userService.listUser = async (criteria = false, attributes = false, pagination, sort = {}) => {
     return await userModel.findAndCountAll({
         ...(criteria && { where: criteria }),
         ...(attributes && { attributes }),
         include: [
             {
                 model: roleModel,
-                attributes: ['id', 'title', 'nature']
+                attributes: ['id', 'title', 'nature', 'type']
             }
         ],
-        ...pagination
+        ...pagination,
+        ...sort
     })
 }
 
 /**
  * function to get user.
  */
-userService.getUser = async (criteria, attributes, withoutJoin = false, roleAttributes = false) => {
+userService.getUser = async (criteria, attributes = false, withoutJoin = false, roleAttributes = false) => {
     let query = {
         where: criteria,
         ...(attributes && { attributes }),
@@ -66,7 +68,7 @@ userService.updateUser = async (criteria, dataToUpdate) => {
 userService.getFilters = async (criteria = false) => {
     let data = await userModel.findAll({
         ...(criteria && { where: criteria }),
-        attributes: ['country', 'role', 'city'],
+        attributes: ['country', 'role', 'city', 'status'],
         include: [
             {
                 model: roleModel,
@@ -86,8 +88,14 @@ userService.getFilters = async (criteria = false) => {
             roleName: item.userrole.title
         }
     });
+    let statusData = data.map(item => {
+        return {
+            statusCode: item.status,
+            status: _.invert(USER_STATUS)[item.status].toLowerCase()
+        }
+    });
 
-    return { cityData: _.uniq(cityData), countryData: _.uniq(countryData), roleData: _.uniqBy(roleData, 'role') }
+    return { cityData: _.uniq(cityData), countryData: _.uniq(countryData), roleData: _.uniqBy(roleData, 'role'), statusData: _.uniqBy(statusData, 'statusCode') }
 }
 
 /**
@@ -95,32 +103,52 @@ userService.getFilters = async (criteria = false) => {
  */
 userService.verifyOtp = async (criteria, otp) => {
     let user = await userService.getUser(criteria, { excludes: ['password'] }, true)
-    let otpData = utils.decryptJwt(user.otp);
-    // TODO: removal of code after implementing below code
-    if (otpData.otp == otp) {
-        user.otp = null;
-        user.isAccountVerified = true;
-        await user.save();
-        return true;
+    if (!user.otp) {
+        return { code: CONSTANTS.OTP_STATUSES.INVALID_OTP, status: false }
     }
-    return false;
-    // TODO
+    let otpData = utils.decryptJwt(user.otp);
+    let duration = moment.duration(moment(otpData.tokenExpiresAt).diff(moment(new Date())));
+    let minutesRemaining = duration.asMinutes();
+    if (otpData.otp !== otp)
+        return { code: CONSTANTS.OTP_STATUSES.INVALID_OTP, status: false };
+    if (minutesRemaining <= 0) {
+        user.otp = null;
+        await user.save();
+        return { code: CONSTANTS.OTP_STATUSES.OTP_EXPIRED, status: false }
+    }
+    user.otp = null;
+    user.isAccountVerified = true;
+    await user.save();
+    return { code: CONSTANTS.OTP_STATUSES.VERIFIED, status: true }
+}
 
-    // let duration = moment.duration(moment(otpData.tokenExpiresAt).diff(moment(new Date())));
-    // let minutes = (duration.asMinutes()) * -1;
-    // if (otpData.otp !== otp)
-    //     return { code: CONSTANTS.OTP_STATUSES.INVALID_OTP, status: false };
-    // if (minutes > 10) {
-    //     user.otp = null;
-    //     await user.save();
-    //     return { code: CONSTANTS.OTP_STATUSES.OTP_EXPIRED, status: false }
-    // }
+/**
+ * deleting user
+ */
+userService.deleteUser = async (criteria) => {
+    let warehouseLocTrans = await warehouseLocationModel.findOne({
+        where: { contactPerson: criteria.id }
+    });
+    let userData = await userModel.findOne({ where: criteria });
+    let flag = false;
+    if (userData.status == CONSTANTS.USER_STATUS.Pending) {
+        flag = true;
+    } else if (
+        (warehouseLocTrans) ||
+        (userData.warehouseCode != undefined) ||
+        userData.status != CONSTANTS.USER_STATUS.Rejected
+    ) {
+        flag = false;
+    }
+    if (flag)
+        return await userModel.update({ isDeleted: true, isAccountVerified: false, status: USER_STATUS.Deleted }, { where: criteria });
+    return false;
 }
 
 /**
  * deleting user permanently
  */
-userService.deleteUser = async (criteria) => {
+userService.destroyUserData = async (criteria) => {
     return await userModel.destroy({ where: criteria });
 }
 

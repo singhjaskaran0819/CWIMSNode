@@ -71,6 +71,8 @@ var defaults = {
     UI_PATHS: {
         BASE_PATH: process.env.CLIENT_APP_BASE_URL || 'http://localhost:4200',
         RESET_PASSWORD_PATH: process.env.CLIENT_APP_RESET_PASSWORD_PATH || '/reset-password/',
+        USER_LIST: process.env.USER_LIST || 'user-list',
+        REGENERATE_OTP: process.env.REGENERATE_OTP || 'pending-approval'
     },
     REDIS: {
         PORT: process.env.REDIS_PORT || '6379',

@@ -10,9 +10,10 @@ module.exports = function(connection) {
             defaultValue: Sequelize.DataTypes.UUIDV4
         },
         productCode: { type: Sequelize.DataTypes.STRING },
-        productId: { type: Sequelize.DataTypes.STRING },
+        comboId: { type: Sequelize.DataTypes.UUID, defaultValue: Sequelize.DataTypes.UUIDV4 },
+        productID: { type: Sequelize.DataTypes.STRING },
         description: { type: Sequelize.DataTypes.TEXT },
-        quantity: { type: Sequelize.DataTypes.INTEGER },
+        qty: { type: Sequelize.DataTypes.INTEGER },
         locationCode: { type: Sequelize.DataTypes.STRING }
     }, {
         timestamps: true

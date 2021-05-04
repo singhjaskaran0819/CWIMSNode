@@ -10,6 +10,7 @@ module.exports = function (connection) {
         },
         code: { type: Sequelize.DataTypes.STRING, allowNull: false, primaryKey: true },
         name: { type: Sequelize.DataTypes.STRING },
+        email: { type: Sequelize.DataTypes.STRING },
         isPublic: { type: Sequelize.DataTypes.BOOLEAN, defaultValue: false },
         addressLine1: { type: Sequelize.DataTypes.STRING, defaultValue: "" },
         street: { type: Sequelize.DataTypes.STRING, defaultValue: "" },
@@ -17,7 +18,8 @@ module.exports = function (connection) {
         country: { type: Sequelize.DataTypes.STRING, defaultValue: "" },
         postalCode: { type: Sequelize.DataTypes.STRING, defaultValue: "" },
         telephone: { type: Sequelize.DataTypes.STRING },
-        startDate: { type: Sequelize.DataTypes.DATEONLY }
+        startDate: { type: Sequelize.DataTypes.DATEONLY, defaultValue: new Date() },
+        endDate: { type: Sequelize.DataTypes.DATEONLY },
     }, {
         timestamps: true
     });

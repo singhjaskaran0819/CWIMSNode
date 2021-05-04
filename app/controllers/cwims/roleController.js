@@ -4,6 +4,7 @@ const HELPERS = require("../../helpers");
 const CONSTANTS = require('../../utils/constants');
 const SERVICES = require('../../services');
 const _ = require('lodash');
+const utils = require('../../utils/utils');
 
 let roleController = {};
 
@@ -43,6 +44,13 @@ roleController.addNewRole = async (payload) => {
     payload.nature = CONSTANTS.ROLE_NATURE.BUSINESS;
     let checkIfAlreadyExisted = await SERVICES.roleService.fetchRole({ title: payload.title });
     if (checkIfAlreadyExisted) {
+        await SERVICES.logsService.create({
+            operation: CONSTANTS.LOGS_OPERATION.ADD_ROLE,
+            error: CONSTANTS.MESSAGES.ROLES_ALREADY_EXISTS,
+            isError: true,
+            module: 'ROLE',
+            doneBy: payload.user.id
+        })
         throw HELPERS.responseHelper.createErrorResponse(CONSTANTS.MESSAGES.ROLES_ALREADY_EXISTS, CONSTANTS.ERROR_TYPES.BAD_REQUEST)
     }
     payload.permissions = removeNestedEmptyObjectsAndArrays(payload.permissions);
@@ -55,9 +63,20 @@ roleController.addNewRole = async (payload) => {
  * fetch roles controller
  */
 roleController.fetchRoles = async (payload) => {
-    let data = await SERVICES.roleService.fetchRoles({
-        nature: CONSTANTS.ROLE_NATURE.BUSINESS
-    }, ['id', 'title', 'permissions', 'nature']);
+    let criteria;
+    let pagination = {
+        offset: payload.skip,
+        limit: payload.limit
+    }
+    if (payload.type) {
+        criteria = {
+            type: payload.type
+        }
+    } else {
+        criteria = false
+    }
+    let sort = utils.createSortingObject(payload.sortKey, payload.sortDirection);
+    let data = await SERVICES.roleService.fetchRoles(criteria, ['id', 'title', 'permissions', 'nature', 'type'], pagination, sort);
     return Object.assign(HELPERS.responseHelper.createSuccessResponse(CONSTANTS.MESSAGES.ROLES_LIST_FETCHED), { data })
 }
 
@@ -81,8 +100,14 @@ roleController.fetchRole = async (payload) => {
  * delete role by Id
  */
 roleController.deleteRole = async (payload) => {
+    let checkIfUsersAssociated = await SERVICES.roleService.fetchUsersByRoles({
+        role: payload.id
+    })
+    if (checkIfUsersAssociated && checkIfUsersAssociated.length !== 0) {
+        return HELPERS.responseHelper.createErrorResponse(CONSTANTS.MESSAGES.USERS_ASSOCIATED_WITH_USERS, CONSTANTS.ERROR_TYPES.BAD_REQUEST);
+    }
     let data = await SERVICES.roleService.deleteRole({ id: payload.id });
-    return Object.assign(HELPERS.responseHelper.createSuccessResponse(CONSTANTS.MESSAGES.ROLES_DELETED), { data });
+    return HELPERS.responseHelper.createSuccessResponse(CONSTANTS.MESSAGES.ROLES_DELETED);
 }
 
 module.exports = roleController;

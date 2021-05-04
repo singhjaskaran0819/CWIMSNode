@@ -3,7 +3,8 @@
 const swaggerUI = require('swagger-ui-express');
 const SERVICES = require('../services');
 const Joi = require('@hapi/joi');
-let path = require('path')
+let path = require('path');
+const basicAuth = require('express-basic-auth');
 
 const CONFIG = require('../../config');
 const { MESSAGES, ERROR_TYPES, AVAILABLE_AUTHS, USER_ROLES, ROLE_TYPE } = require('./constants');
@@ -136,7 +137,14 @@ let createSwaggerUIForRoutes = (app, routes = []) => {
   });
 
   const swaggerDocument = require('../../swagger.json');
-  app.use('/documentation', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
+  let swagger_credential = {}
+  // swagger_credential[`${process.env.documentation_user}`] = process.env.documentation_password
+  app.use('/documentation',
+    // basicAuth({
+    //   users: swagger_credential,
+    //   challenge: true,
+    // }), 
+    swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 };
 
 module.exports = routeUtils;

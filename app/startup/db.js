@@ -1,3 +1,5 @@
+'use strict';
+
 const { Sequelize } = require('sequelize');
 const CONFIG = require('../../config');
 const dbUtils = require('../utils/dbUtils');
@@ -17,7 +19,16 @@ let models = {
     warehouseLocation: require("../models/cwims/warehouseLocationModel")(connection),
     warehouse: require("../models/cwims/warehouseModel")(connection),
     user: require("../models/cwims/userModel")(connection),
+    declaration: require("../models/cwims/declarationModel")(connection),
+    rackItem: require("../models/cwims/rackItemsModel")(connection),
+    sadItem: require("../models/cwims/sadItemsModel")(connection),
+    saleProducts: require("../models/cwims/saleProductsModel")(connection),
+    sale: require("../models/cwims/salesModel")(connection),
     role: require("../models/cwims/roleModel")(connection),
+    stockTakeBuffer: require("../models/cwims/stockTakeBufferModel")(connection),
+    stockTake: require("../models/cwims/stockTakeListingModel")(connection),
+    logs: require("../models/cwims/logsModel")(connection),
+    declarationMessage: require("../models/cwims/declarationMessageModel")(connection),
     session: require("../models/cwims/sessionModel")(connection),
     groupedInventory: require("../models/cwims/groupedInventoryModel")(connection),
 }
@@ -54,7 +65,7 @@ connection
     .then(async () => {
         // add initial data
         await dbUtils.addInitialData(models);
-        console.log('Tables created.');
+        console.log('Tables created and updated with initial data.');
     })
     .catch(err => {
         console.error("Unable to create tables", err);

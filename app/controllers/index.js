@@ -9,5 +9,7 @@ module.exports = {
     warehouseController: require(`./cwims/warehouseController`),
     roleController: require(`./cwims/roleController`),
     inventoryController: require(`./cwims/inventoryController`),
+    declarationController: require(`./cwims/declarationController`),
+    salesController: require(`./cwims/salesController`),
     fileUploadController: require(`./cwims/fileUploadController`)
 };

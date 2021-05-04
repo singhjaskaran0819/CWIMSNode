@@ -28,20 +28,34 @@ module.exports = function (connection) {
         resetPasswordToken: { type: Sequelize.DataTypes.TEXT },
         password: {
             type: Sequelize.DataTypes.STRING,
-            allowNull: false,
+            allowNull: true,
             set(value) {
                 this.setDataValue('password', commonFunctions.hashPassword(value));
             }
         },
         lastPasswordUpdated: { type: Sequelize.DataTypes.DATE },
+        userCreatedOwnPassword: { type: Sequelize.DataTypes.BOOLEAN, defaultValue: false },
         unsuccessfulLogins: { type: Sequelize.DataTypes.INTEGER, defaultValue: 0 },
+        isDeleted: { type: Sequelize.DataTypes.BOOLEAN, defaultValue: false },
         isBlocked: { type: Sequelize.DataTypes.BOOLEAN, defaultValue: false },
         isAccountVerified: { type: Sequelize.DataTypes.BOOLEAN, defaultValue: false },
         status: { type: Sequelize.DataTypes.INTEGER, defaultValue: CONSTANTS.USER_STATUS.Pending },
-        rejectionReason: { type: Sequelize.DataTypes.TEXT }
+        rejectionReason: { type: Sequelize.DataTypes.TEXT },
+        countryIso: { type: Sequelize.DataTypes.TEXT }
     }, {
         timestamps: true
     });
+
+    users.associate = (models) => {
+        users.hasOne(models.warehouseLocation, { foreignKey: 'contactPerson', sourceKey: 'id' });
+        models.warehouseLocation.belongsTo(users, { as: 'contactPersonData', foreignKey: 'contactPerson', targetKey: 'id' });
+
+        users.hasOne(models.declarationMessage, { foreignKey: 'operator', sourceKey: 'id' });
+        models.declarationMessage.belongsTo(users, { as: 'operatorData', foreignKey: 'operator', targetKey: 'id' });
+
+        users.hasOne(models.declarationMessage, { foreignKey: 'officer', sourceKey: 'id' });
+        models.declarationMessage.belongsTo(users, { as: 'officerData', foreignKey: 'officer', targetKey: 'id' });
+    }
 
     return users;
 };

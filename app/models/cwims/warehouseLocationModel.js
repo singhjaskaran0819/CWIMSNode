@@ -11,6 +11,8 @@ module.exports = function (connection) {
         whs_code: { type: Sequelize.DataTypes.STRING },
         code: { type: Sequelize.DataTypes.STRING, primaryKey: true },
         name: { type: Sequelize.DataTypes.STRING },
+        email: { type: Sequelize.DataTypes.STRING },
+        contactPerson: { type: Sequelize.DataTypes.UUID },
         isPublic: { type: Sequelize.DataTypes.BOOLEAN, defaultValue: false },
         addressLine1: { type: Sequelize.DataTypes.STRING, defaultValue: "" },
         street: { type: Sequelize.DataTypes.STRING, defaultValue: "" },
@@ -29,6 +31,9 @@ module.exports = function (connection) {
 
         warehouseLocations.hasMany(models.groupedInventory, { foreignKey: 'locationCode', sourceKey: 'code' });
         models.groupedInventory.belongsTo(warehouseLocations, { foreignKey: 'locationCode', targetKey: 'code' });
+
+        warehouseLocations.hasMany(models.declaration, { foreignKey: 'locationCode', sourceKey: 'code' });
+        models.declaration.belongsTo(warehouseLocations, { foreignKey: 'locationCode', targetKey: 'code' });
     }
 
     return warehouseLocations;

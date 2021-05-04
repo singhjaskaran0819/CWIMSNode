@@ -8,6 +8,8 @@ let v1Routes = [
     ...require('./warehouseRoutes'),
     ...require('./roleRoutes'),
     ...require('./inventoryRoutes'),
+    ...require('./salesRoutes'),
+    ...require('./declarationRoutes'),
     ...require('./fileUploadRoutes')
 ]
 

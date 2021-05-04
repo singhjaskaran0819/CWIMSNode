@@ -1,7 +1,7 @@
 'use strict';
 
 const { Joi } = require('../../../utils/joiUtils');
-const { AVAILABLE_AUTHS } = require(`../../../utils/constants`);
+
 //load controllers
 const { fileUploadController } = require(`../../../controllers`);
 

@@ -1,7 +1,6 @@
 'use strict';
 
 const { Joi } = require('../../../utils/joiUtils');
-const { AVAILABLE_AUTHS } = require(`../../../utils/constants`);
 
 // load controllers
 const warehouseController = require(`../../../controllers/cwims/warehouseController`);
@@ -21,6 +20,8 @@ let routes = [
                 warehouseCode: Joi.string(),
                 locationCode: Joi.string(),
                 city: Joi.string(),
+                sortKey: Joi.string().default('createdAt'),
+                sortDirection: Joi.number().default(-1),
                 country: Joi.string(),
                 postalCode: Joi.string(),
                 location_city: Joi.string(),
@@ -71,7 +72,8 @@ let routes = [
                 infinteScroll: Joi.boolean().default(false),
                 city: Joi.string(),
                 country: Joi.string(),
-                postalCode: Joi.string()
+                postalCode: Joi.string(),
+                isStockTakeProcess: Joi.boolean()
             },
             group: 'Warehouse',
             description: 'Route to fetch warehouse by code.',
@@ -114,6 +116,167 @@ let routes = [
         },
         auth: true,
         handler: warehouseController.getFilters
+    },
+
+    // CRUD Operations
+    {
+        method: 'POST',
+        path: '/v1/warehouse/add-warehouse',
+        joiSchemaForSwagger: {
+            headers: {
+                authorization: Joi.string().required()
+            },
+            body: {
+                code: Joi.string(),
+                email: Joi.string(),
+                name: Joi.string(),
+                isPublic: Joi.boolean().default(false),
+                street: Joi.string(),
+                city: Joi.string(),
+                country: Joi.string(),
+                postalCode: Joi.string(),
+                telephone: Joi.string(),
+                startDate: Joi.string()
+            },
+            group: 'Warehouse',
+            description: 'Route to add warehouse.',
+            model: 'Add_Warehouse'
+        },
+        auth: true,
+        handler: warehouseController.addWarehouse
+    },
+    {
+        method: 'POST',
+        path: '/v1/warehouse/add-warehouse-location',
+        joiSchemaForSwagger: {
+            headers: {
+                authorization: Joi.string().required()
+            },
+            body: {
+                code: Joi.string(),
+                whs_code: Joi.string(),
+                contactPerson: Joi.string(),
+                name: Joi.string(),
+                email: Joi.string(),
+                isPublic: Joi.boolean().default(false),
+                street: Joi.string(),
+                city: Joi.string(),
+                country: Joi.string(),
+                postalCode: Joi.string(),
+                telephone: Joi.string(),
+                startDate: Joi.string()
+            },
+            group: 'Warehouse Location',
+            description: 'Route to add warehouse location.',
+            model: 'Add_Warehouse_location'
+        },
+        auth: true,
+        handler: warehouseController.addWarehouseLocation
+    },
+    {
+        method: 'PUT',
+        path: '/v1/warehouse/update-warehouse',
+        joiSchemaForSwagger: {
+            headers: {
+                authorization: Joi.string().required()
+            },
+            body: {
+                code: Joi.string().required(),
+                email: Joi.string(),
+                name: Joi.string(),
+                isPublic: Joi.boolean().default(false),
+                street: Joi.string(),
+                city: Joi.string(),
+                country: Joi.string(),
+                postalCode: Joi.string(),
+                telephone: Joi.string(),
+                startDate: Joi.string()
+            },
+            group: 'Warehouse',
+            description: 'Route to update warehouse.',
+            model: 'Update_Warehouse'
+        },
+        auth: true,
+        handler: warehouseController.updateWarehouse
+    },
+    {
+        method: 'PUT',
+        path: '/v1/warehouse/update-warehouse-location',
+        joiSchemaForSwagger: {
+            headers: {
+                authorization: Joi.string().required()
+            },
+            body: {
+                code: Joi.string().required(),
+                whs_code: Joi.string(),
+                contactPerson: Joi.string(),
+                name: Joi.string(),
+                email: Joi.string(),
+                isPublic: Joi.boolean().default(false),
+                street: Joi.string(),
+                city: Joi.string(),
+                country: Joi.string(),
+                postalCode: Joi.string(),
+                telephone: Joi.string(),
+                startDate: Joi.string()
+            },
+            group: 'Warehouse Location',
+            description: 'Route to update warehouse location.',
+            model: 'Update_Warehouse_location'
+        },
+        auth: true,
+        handler: warehouseController.UpdateWarehouseLocation
+    },
+    {
+        method: 'DELETE',
+        path: '/v1/warehouse/delete-warehouse/:code',
+        joiSchemaForSwagger: {
+            headers: {
+                authorization: Joi.string().required()
+            },
+            params: {
+                code: Joi.string()
+            },
+            group: 'Warehouse',
+            description: 'Route to delete warehouse.',
+            model: 'Delete_Warehouse'
+        },
+        auth: true,
+        handler: warehouseController.deleteWarehouse
+    },
+    {
+        method: 'DELETE',
+        path: '/v1/warehouse/delete-warehouse-location/:code',
+        joiSchemaForSwagger: {
+            headers: {
+                authorization: Joi.string().required()
+            },
+            params: {
+                code: Joi.string()
+            },
+            group: 'Warehouse Location',
+            description: 'Route to delete warehouse location.',
+            model: 'Delete_Warehouse_Location'
+        },
+        auth: true,
+        handler: warehouseController.deleteWarehouseLocation
+    },
+    {
+        method: 'GET',
+        path: '/v1/warehouse/fetch-sub-locations/:code',
+        joiSchemaForSwagger: {
+            // headers: {
+            //     authorization: Joi.string().required()
+            // },
+            params: {
+                code: Joi.string()
+            },
+            group: 'Warehouse Location',
+            description: 'Route to fetch sub locations.',
+            model: 'Fetch_sub_Location'
+        },
+        // auth: true,
+        handler: warehouseController.fetchSubLocations
     }
 ]
 

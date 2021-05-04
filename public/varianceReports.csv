@@ -1,0 +1,3 @@
+productID;stockTakeQuantity;difference;status;rejectionReason;description;actualQuantity;isUpdated;createdAt
+Test2;60;57;APPROVED;NA;test2;3;false;4/5/2021
+Test1;50;50;SUBMITTED;NA;test1;100;false;4/5/2021

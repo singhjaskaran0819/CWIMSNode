@@ -5,6 +5,7 @@ const CONSTANTS = require('./constants'),
     HANDLEBARS = require('handlebars'),
     awsSms = require('aws-sns-sms'),
     SES = require('node-ses'),
+    csv = require('csvtojson'),
     fs = require('fs');
 
 /**
@@ -35,7 +36,7 @@ const transporter = nodemailer.createTransport({
         clientId: process.env.NODEMAILER_CLIENT_ID,
         clientSecret: process.env.NODEMAILER_CLIENT_SECRET,
         refreshToken: process.env.NODEMAILER_CLIENT_REFRESH_TOKEN,
-        accessToken: accessToken
+        accessToken
     },
     secure: true,
     tls: { rejectUnauthorized: false },
@@ -120,9 +121,6 @@ commonFunctions.messageLogs = (error, success) => {
 
 /**
  * function to get pagination condition for aggregate query.
- * @param {*} sort 
- * @param {*} skip 
- * @param {*} limit 
  */
 commonFunctions.getPaginationConditionForAggregate = (sort, skip, limit) => {
     let condition = [
@@ -135,7 +133,6 @@ commonFunctions.getPaginationConditionForAggregate = (sort, skip, limit) => {
 
 /**
  * function to remove undefined keys from the payload.
- * @param {*} payload 
  */
 commonFunctions.removeUndefinedKeysFromPayload = (payload = {}) => {
     for (let key in payload) {
@@ -148,7 +145,7 @@ commonFunctions.removeUndefinedKeysFromPayload = (payload = {}) => {
 /**
  * Send an email to perticular user mail 
  */
-commonFunctions.sendEmail = async(to, data, type) => {
+commonFunctions.sendEmail = async (to, data, type) => {
     const email = commonFunctions.emailTypes(type, data);
     email.template = fs.readFileSync(email.template, 'utf-8');
     const message = await commonFunctions.renderTemplate(email.template, email.data);
@@ -160,7 +157,7 @@ commonFunctions.sendEmail = async(to, data, type) => {
         html: message
     }
 
-    return new Promise(async(resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         try {
             let info = await transporter.sendMail(emailToSend);
             resolve(info);
@@ -193,7 +190,53 @@ commonFunctions.emailTypes = (type, payload) => {
             EmailData.template = CONSTANTS.EMAIL_CONTENTS.OTP_EMAIL;
             EmailData.data['otp'] = payload.otp;
             EmailData.data['name'] = payload.name;
+            EmailData.data['pendingApprovalLink'] = payload.pendingApprovalLink;
             EmailData.data['otpImage'] = `${CONFIG.SERVER_URL}/public/images/otp.png`;
+            break;
+
+        case CONSTANTS.EMAIL_TYPES.REGARDING_PENDING_REQUESTS:
+            EmailData['subject'] = CONSTANTS.EMAIL_SUBJECTS.REGARDING_PENDING_REQUESTS;
+            EmailData.template = CONSTANTS.EMAIL_CONTENTS.REGARDING_PENDING_REQUESTS;
+            EmailData.data['numberOfRequests'] = payload.numberOfRequests;
+            EmailData.data['navigationLink'] = payload.navigationLink;
+            EmailData.data['pendingRequestsImage'] = `${CONFIG.SERVER_URL}/public/images/pending_list.png`;
+            break;
+
+        case CONSTANTS.EMAIL_TYPES.ACCOUNT_APPROVED:
+            EmailData['subject'] = CONSTANTS.EMAIL_SUBJECTS.ACCOUNT_APPROVED;
+            EmailData.template = CONSTANTS.EMAIL_CONTENTS.ACCOUNT_APPROVED;
+            EmailData.data['name'] = payload.name;
+            EmailData.data['navigationLink'] = payload.navigationLink;
+            EmailData.data['accountApprovedImage'] = `${CONFIG.SERVER_URL}/public/images/approved_email.png`;
+            break;
+
+        case CONSTANTS.EMAIL_TYPES.ACCOUNT_ADDED:
+            EmailData['subject'] = CONSTANTS.EMAIL_SUBJECTS.ACCOUNT_ADDED;
+            EmailData.template = CONSTANTS.EMAIL_CONTENTS.ACCOUNT_ADDED;
+            EmailData.data['name'] = payload.name;
+            EmailData.data['email'] = payload.email;
+            EmailData.data['password'] = payload.password;
+            EmailData.data['navigationLink'] = payload.navigationLink;
+            EmailData.data['resetPasswordLink'] = payload.resetPasswordLink;
+            EmailData.data['accountAddedImage'] = `${CONFIG.SERVER_URL}/public/images/approved_email.png`;
+            break;
+
+        case CONSTANTS.EMAIL_TYPES.ACCOUNT_REJECTED:
+            EmailData['subject'] = CONSTANTS.EMAIL_SUBJECTS.ACCOUNT_REJECTED;
+            EmailData.template = CONSTANTS.EMAIL_CONTENTS.ACCOUNT_REJECTED;
+            EmailData.data['name'] = payload.name;
+            EmailData.data['rejectionReason'] = payload.rejectionReason;
+            EmailData.data['navigationLink'] = payload.navigationLink;
+            EmailData.data['accountRejectedImage'] = `${CONFIG.SERVER_URL}/public/images/rejected-user.png`;
+            break;
+
+        case CONSTANTS.EMAIL_TYPES.NEW_ROLE_ASSIGNED:
+            EmailData['subject'] = CONSTANTS.EMAIL_SUBJECTS.NEW_ROLE_ASSIGNED;
+            EmailData.template = CONSTANTS.EMAIL_CONTENTS.NEW_ROLE_ASSIGNED;
+            EmailData.data['name'] = payload.name;
+            EmailData.data['role'] = payload.role;
+            EmailData.data['assignedBy'] = payload.assignedBy;
+            EmailData.data['newRoleAssignedImage'] = `${CONFIG.SERVER_URL}/public/images/role-assign.png`;
             break;
 
         default:
@@ -238,9 +281,6 @@ commonFunctions.generateAlphanumericString = (length) => {
 
 /**
  * function to generate random otp string
- * @param {otplength, } phoneNumber
- * @param {sampleSpace} String
- * @returns {randomString}
  */
 commonFunctions.generateRandomString = (otplength = 6, sampleSpace = '0123456789') => {
     let randomString = '',
@@ -256,7 +296,7 @@ commonFunctions.generateRandomString = (otplength = 6, sampleSpace = '0123456789
  * @param {receiver} phoneNumber
  * @param {content} SMS 
  */
-commonFunctions.sendSms = async(receiver, content) => {
+commonFunctions.sendSms = async (receiver, content) => {
     let msg = {
         "message": content,
         "sender": CONFIG.AWS.SMS_SENDER,
@@ -265,6 +305,43 @@ commonFunctions.sendSms = async(receiver, content) => {
     console.log(content)
     let smsResponse = await awsSms(awsConfig, msg);
     return smsResponse
+}
+
+/**
+ * convert CSV to JSON ARRAY
+ */
+commonFunctions.convertFileToJSONData = async (payload) => {
+    let arr = payload.file.originalname.split('.');
+    if (arr[arr.length - 1].includes("csv")) {
+        return await csv().fromString(payload.file.buffer.toString());
+    } else if (arr[arr.length - 1].includes("json")) {
+        return JSON.parse(payload.file.buffer.toString());
+    }
+}
+
+/**
+ * create sorting object
+ */
+commonFunctions.createSortingObject = (sortKey, sortDirection) => {
+    return {
+        order: [[sortKey, ...(sortDirection == 1 ? ['ASC'] : ['DESC'])]]
+    }
+}
+
+/**
+ * check duplication within an array
+ */
+commonFunctions.checkDuplicatesInArray = (arr) => {
+    let result = false;
+    // create a Set with array elements
+    const s = new Set(arr);
+    // compare the size of array and Set
+    if (arr.length !== s.size) {
+        result = true;
+    }
+    if (result)
+        return true;
+    return false;
 }
 
 module.exports = commonFunctions;

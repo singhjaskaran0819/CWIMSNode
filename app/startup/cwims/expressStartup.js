@@ -4,10 +4,8 @@ const express = require('express');
 
 const routes = require('../../routes');
 const routeUtils = require('../../utils/routeUtils');
-const dbUtils = require(`../../utils/dbUtils`);
-const commonFunctions = require(`../../utils/utils`);
+const { cronService } = require('../../services');
 const COMMON_FUN = require('../../utils/utils');
-const SERVICES = require('../../services');
 const cors = require('cors');
 
 module.exports = async function (app) {
@@ -40,8 +38,9 @@ module.exports = async function (app) {
     // app.use('/public', express.static('public'));
     app.use('/uploads', express.static('uploads'));
 
-    // add therapists
-    // await dbUtils.addInitialData();
+    // cron service calls
+    cronService.notifyUsers();
+    // cronService.destroyUserHavingNoTransaction();
 
     // initalize routes.
     await routeUtils.route(app, routes);
